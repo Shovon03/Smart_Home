@@ -4,12 +4,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 
 import android.content.Context;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.text.format.Formatter;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import org.w3c.dom.Text;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
@@ -21,6 +27,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     Switch swtch4;
 
     Button allButton;
+
+    Button resetButton;
+    TextView textView;
+
+    //declaring wifi
+    WifiManager wifiManager;
+    WifiInfo connection;
+
+    //string for storing IP address
+    String ipaddress;
 
 
 
@@ -38,6 +54,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         allButton = (Button) findViewById(R.id.button1);
         allButton.setOnClickListener(this);
 
+        //connecting resetButton with buttonReset from XML file
+        resetButton = (Button) findViewById(R.id.buttonReset);
+        //connecting textView with textViewConn
+        textView = (TextView) findViewById(R.id.textViewConn);
+
+
+
+        resetButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
+                connection = wifiManager.getConnectionInfo();
+                if(connection.getNetworkId()==-1){
+                    ipaddress = "Status: Disconnected";
+                    textView.setText("Status: Disconnected");
+                }
+                else {
+                    ipaddress = Formatter.formatIpAddress(connection.getIpAddress());
+                    textView.setText("Status: Connected to " + ipaddress);
+                }
+            }
+        });
 
         swtch1.setOnClickListener(new View.OnClickListener() {
             @Override
