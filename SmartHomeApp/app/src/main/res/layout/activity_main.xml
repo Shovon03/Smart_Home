@@ -108,7 +108,7 @@
         app:layout_constraintTop_toBottomOf="@+id/textView1" />
 
     <Button
-        android:id="@+id/buttonReset"
+        android:id="@+id/buttonParse"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="300dp"
@@ -116,7 +116,7 @@
         android:layout_marginEnd="32dp"
         android:layout_marginBottom="16dp"
         android:background="@color/colorAccent"
-        android:text="Reset IP"
+        android:text="Refresh"
         android:textAlignment="center"
         android:textColor="@android:color/background_light"
         android:textSize="14sp"
@@ -124,5 +124,13 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textViewAPI"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Connecting...."
+        tools:layout_editor_absoluteX="88dp"
+        tools:layout_editor_absoluteY="510dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

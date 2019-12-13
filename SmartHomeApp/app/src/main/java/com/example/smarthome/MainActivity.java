@@ -1,8 +1,8 @@
 package com.example.smarthome;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.SwitchCompat;
 
+import android.app.DownloadManager;
 import android.content.Context;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -15,10 +15,23 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.w3c.dom.Text;
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+import java.util.HashMap;
+import java.util.Map;
 
+import static com.android.volley.Request.Method.POST;
+
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    //creating a request queue
+    private RequestQueue mQueue;
 
     //declaring the variables
     Switch swtch1;
@@ -28,8 +41,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     Button allButton;
 
-    Button resetButton;
+    Button parseButton;
     TextView textView;
+    TextView mTextViewResult;
 
     //declaring wifi
     WifiManager wifiManager;
@@ -38,6 +52,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     //string for storing IP address
     String ipaddress;
 
+    //string for storing API
+    String urlAPI = "https://io.adafruit.com/api/v2/shovon03/feeds/alexapi-feed?X-AIO-KEY=a712e135b6bd4007aa23d99ca6e8d8d3";
 
 
     @Override
@@ -55,22 +71,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         allButton.setOnClickListener(this);
 
         //connecting resetButton with buttonReset from XML file
-        resetButton = (Button) findViewById(R.id.buttonReset);
+        parseButton = (Button) findViewById(R.id.buttonParse);
         //connecting textView with textViewConn
         textView = (TextView) findViewById(R.id.textViewConn);
+        mTextViewResult = (TextView) findViewById(R.id.textViewAPI);
 
 
-
-        resetButton.setOnClickListener(new View.OnClickListener() {
+        parseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
+                wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
                 connection = wifiManager.getConnectionInfo();
-                if(connection.getNetworkId()==-1){
+
+                setmQueue(mQueue);
+                if (connection.getNetworkId() == -1) {
                     ipaddress = "Status: Disconnected";
                     textView.setText("Status: Disconnected");
-                }
-                else {
+                    Toast toast = Toast.makeText(getApplicationContext(), "Please turn on wifi or mobile data", Toast.LENGTH_SHORT);
+                    toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
+                    toast.show();
+                } else {
                     ipaddress = Formatter.formatIpAddress(connection.getIpAddress());
                     textView.setText("Status: Connected to " + ipaddress);
                 }
@@ -80,11 +100,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         swtch1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (swtch1.isChecked()){
+
+
+                if (swtch1.isChecked()) {
+                    postRequestString("Lights on");
                     Toast toast = Toast.makeText(getApplicationContext(), "Switch 1 turned on", Toast.LENGTH_SHORT);
-                    toast.setGravity(Gravity.BOTTOM|Gravity.CENTER, 0, 300);
+                    toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
                     toast.show();
-                }else {
+                } else {
+                    postRequestString("Lights off");
                     Toast toast = Toast.makeText(getApplicationContext(), "Switch 1 turned off", Toast.LENGTH_SHORT);
                     toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
                     toast.show();
@@ -95,12 +119,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         swtch2.setOnClickListener(this);
 
+
     }
 
     @Override
     public void onClick(View view) {
         //checking which button is clicked in the view
-        if (view.getId()==R.id.button1){
+        if (view.getId() == R.id.button1) {
 
             //turning off all switches
             swtch1.setChecked(false);
@@ -115,15 +140,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             //show the toast
             Toast toast = Toast.makeText(context, text, duration);
-            toast.setGravity(Gravity.BOTTOM|Gravity.CENTER, 0, 300);
+            toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
             toast.show();
-        }
+        } else if (swtch2.isChecked()) {
 
-        else if (swtch2.isChecked()){
+            postRequestString("fan on");
+
             Toast toast = Toast.makeText(getApplicationContext(), "Switch 2 turned on", Toast.LENGTH_SHORT);
-            toast.setGravity(Gravity.BOTTOM|Gravity.CENTER, 0, 300);
+            toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
             toast.show();
-        }else if (!swtch2.isChecked()) {
+        } else if (!swtch2.isChecked()) {
+            postRequestString("fan off");
             Toast toast = Toast.makeText(getApplicationContext(), "Switch 2 turned off", Toast.LENGTH_SHORT);
             toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
             toast.show();
@@ -131,4 +158,75 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
     }
+
+
+    private void setmQueue(RequestQueue mQueue) {
+        this.mQueue = mQueue;
+
+        mQueue = Volley.newRequestQueue(this);
+
+        // Request a string response from the provided URL.
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, urlAPI,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        mTextViewResult.setText("Connected to adafruit API");
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                mTextViewResult.setText("Error connecting to adafruit API");
+            }
+        });
+
+        // Add the request to the RequestQueue.
+        mQueue.add(stringRequest);
+    }
+
+    private void postRequestString(final String thisString) {
+
+        String urlpost = "https://io.adafruit.com/api/v2/shovon03/feeds/alexapi-feed/data";
+        final String theHeader = "a712e135b6bd4007aa23d99ca6e8d8d3";
+
+        RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
+        StringRequest postRequest = new StringRequest(Request.Method.POST, urlpost,
+                new Response.Listener<String>()
+                {
+                    @Override
+                    public void onResponse(String response) {
+                        // response
+                        mTextViewResult.setText("Response: " +response);;
+                    }
+                },
+                new Response.ErrorListener()
+                {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // error
+                        mTextViewResult.setText("Response: Failed to post " +thisString);;
+                    }
+                }){
+            @Override
+            protected Map<String,String> getParams(){
+                Map<String,String> params = new HashMap<String,String>();
+                params.put("datum",thisString);
+
+                return params;
+            }
+
+            @Override
+             public Map<String,String> getHeaders() throws AuthFailureError {
+                Map<String,String> params = new HashMap<String,String>();
+                params.put("x-aio-key", "a712e135b6bd4007aa23d99ca6e8d8d3");
+                return params;
+            }
+        };
+        requestQueue.add(postRequest);
+    }
+
+
+
 }
+
+
+
