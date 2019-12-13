@@ -20,9 +20,16 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -76,6 +83,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         textView = (TextView) findViewById(R.id.textViewConn);
         mTextViewResult = (TextView) findViewById(R.id.textViewAPI);
 
+        //getting network response from API
+        networkQueue();
 
         parseButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -83,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
                 connection = wifiManager.getConnectionInfo();
 
-                setmQueue(mQueue);
+                networkQueue();
                 if (connection.getNetworkId() == -1) {
                     ipaddress = "Status: Disconnected";
                     textView.setText("Status: Disconnected");
@@ -150,7 +159,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
             toast.show();
         } else if (!swtch2.isChecked()) {
+
             postRequestString("fan off");
+
             Toast toast = Toast.makeText(getApplicationContext(), "Switch 2 turned off", Toast.LENGTH_SHORT);
             toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
             toast.show();
@@ -160,10 +171,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
-    private void setmQueue(RequestQueue mQueue) {
-        this.mQueue = mQueue;
+    private void networkQueue() {
 
-        mQueue = Volley.newRequestQueue(this);
+
+        mQueue = Volley.newRequestQueue(MainActivity.this);
 
         // Request a string response from the provided URL.
         StringRequest stringRequest = new StringRequest(Request.Method.GET, urlAPI,
@@ -183,9 +194,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mQueue.add(stringRequest);
     }
 
-    private void postRequestString(final String thisString) {
+    private void postRequestString( final String thisString) {
 
-        String urlpost = "https://io.adafruit.com/api/v2/shovon03/feeds/alexapi-feed/data";
+        String urlpost = "https://io.adafruit.com/api/v2/shovon03/feeds/alexapi-feed/data?x-aio-key=a712e135b6bd4007aa23d99ca6e8d8d3";
         final String theHeader = "a712e135b6bd4007aa23d99ca6e8d8d3";
 
         RequestQueue requestQueue = Volley.newRequestQueue(MainActivity.this);
@@ -195,6 +206,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     @Override
                     public void onResponse(String response) {
                         // response
+
+                        try {
+                            JSONObject object = new JSONObject(response);
+
+                        }catch (JSONException e){
+                            mTextViewResult.setText("Server Error " );;
+                        }
                         mTextViewResult.setText("Response: " +response);;
                     }
                 },
@@ -206,18 +224,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         mTextViewResult.setText("Response: Failed to post " +thisString);;
                     }
                 }){
-            @Override
-            protected Map<String,String> getParams(){
-                Map<String,String> params = new HashMap<String,String>();
-                params.put("datum",thisString);
 
+
+            @Override
+            public Map<String,String> getHeaders() throws AuthFailureError {
+                Map<String,String> params = new HashMap<String,String>();
+                params.put("x-aio-key", "a712e135b6bd4007aa23d99ca6e8d8d3");
                 return params;
             }
 
             @Override
-             public Map<String,String> getHeaders() throws AuthFailureError {
+            protected Map<String,String> getParams(){
                 Map<String,String> params = new HashMap<String,String>();
-                params.put("x-aio-key", "a712e135b6bd4007aa23d99ca6e8d8d3");
+                params.put("value",thisString);
+
                 return params;
             }
         };
