@@ -2,12 +2,15 @@ package com.example.smarthome;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.app.DownloadManager;
+
 import android.content.Context;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+
+import android.os.Handler;
 import android.text.format.Formatter;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -20,20 +23,18 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.JsonObjectRequest;
+
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
-import org.json.JSONArray;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.android.volley.Request.Method.POST;
+
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -55,6 +56,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     //declaring wifi
     WifiManager wifiManager;
     WifiInfo connection;
+
+    //for checking net connectivity every 5s.
+    Handler handler = new Handler();
 
     //string for storing IP address
     String ipaddress;
@@ -79,30 +83,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //connecting resetButton with buttonReset from XML file
         parseButton = (Button) findViewById(R.id.buttonParse);
+
         //connecting textView with textViewConn
         textView = (TextView) findViewById(R.id.textViewConn);
+
         mTextViewResult = (TextView) findViewById(R.id.textViewAPI);
 
-        //getting network response from API
-        networkQueue();
+        //checking network response
+        netCheck();
 
         parseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-                connection = wifiManager.getConnectionInfo();
-
-                networkQueue();
-                if (connection.getNetworkId() == -1) {
-                    ipaddress = "Status: Disconnected";
-                    textView.setText("Status: Disconnected");
-                    Toast toast = Toast.makeText(getApplicationContext(), "Please turn on wifi or mobile data", Toast.LENGTH_SHORT);
-                    toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
-                    toast.show();
-                } else {
-                    ipaddress = Formatter.formatIpAddress(connection.getIpAddress());
-                    textView.setText("Status: Connected to " + ipaddress);
-                }
+               netCheck();
             }
         });
 
@@ -128,13 +121,55 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         swtch2.setOnClickListener(this);
 
+        swtch3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+
+                if (swtch3.isChecked()) {
+                    postRequestString("switch3 on");
+                    Toast toast = Toast.makeText(getApplicationContext(), "Switch 3 turned on", Toast.LENGTH_SHORT);
+                    toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
+                    toast.show();
+                } else {
+                    postRequestString("switch3 off");
+                    Toast toast = Toast.makeText(getApplicationContext(), "Switch 3 turned off", Toast.LENGTH_SHORT);
+                    toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
+                    toast.show();
+                }
+
+            }
+        });
+
+        swtch4.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+
+                if (swtch4.isChecked()) {
+                    postRequestString("switch4 on");
+                    Toast toast = Toast.makeText(getApplicationContext(), "Switch 3 turned on", Toast.LENGTH_SHORT);
+                    toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
+                    toast.show();
+                } else {
+                    postRequestString("switch4 off");
+                    Toast toast = Toast.makeText(getApplicationContext(), "Switch 3 turned off", Toast.LENGTH_SHORT);
+                    toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
+                    toast.show();
+                }
+
+            }
+        });
+
 
     }
 
     @Override
     public void onClick(View view) {
         //checking which button is clicked in the view
-        if (view.getId() == R.id.button1) {
+        if (view.getId() == R.id.button1) { //the turn all off button is clicked
+            //giving a post request
+            postRequestString("all off");
 
             //turning off all switches
             swtch1.setChecked(false);
@@ -173,7 +208,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void networkQueue() {
 
-
         mQueue = Volley.newRequestQueue(MainActivity.this);
 
         // Request a string response from the provided URL.
@@ -211,9 +245,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             JSONObject object = new JSONObject(response);
 
                         }catch (JSONException e){
-                            mTextViewResult.setText("Server Error " );;
+                            mTextViewResult.setText("Server Response Error " );;
                         }
-                        mTextViewResult.setText("Response: " +response);;
+                        mTextViewResult.setText("Response: Post Successful" /*+response*/);;
                     }
                 },
                 new Response.ErrorListener()
@@ -229,7 +263,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public Map<String,String> getHeaders() throws AuthFailureError {
                 Map<String,String> params = new HashMap<String,String>();
-                params.put("x-aio-key", "a712e135b6bd4007aa23d99ca6e8d8d3");
+                params.put("x-aio-key", theHeader);
                 return params;
             }
 
@@ -243,8 +277,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         };
         requestQueue.add(postRequest);
     }
+    private void netCheck(){
+        wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        connection = wifiManager.getConnectionInfo();
 
+        networkQueue();
+        if (connection.getNetworkId() == -1) {
 
+            textView.setText("           Status: Disconnected \n\n Please connect to the Internet.");
+
+            Toast toast = Toast.makeText(getApplicationContext(), "Please turn on wifi or mobile data", Toast.LENGTH_SHORT);
+            toast.setGravity(Gravity.BOTTOM | Gravity.CENTER, 0, 300);
+            toast.show();
+        } else {
+
+            //ipaddress = Formatter.formatIpAddress(connection.getIpAddress());
+            textView.setText("Status: Connected" /*+ ipaddress*/);
+        }
+    }
+    
 
 }
 
