@@ -57,14 +57,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     WifiManager wifiManager;
     WifiInfo connection;
 
-    //for checking net connectivity every 5s.
-    Handler handler = new Handler();
-
     //string for storing IP address
     String ipaddress;
 
     //string for storing API
-    String urlAPI = "https://io.adafruit.com/api/v2/shovon03/feeds/alexapi-feed?X-AIO-KEY=a712e135b6bd4007aa23d99ca6e8d8d3";
+    String urlAPI = "https://io.adafruit.com/api/v2/shovon03/feeds/alexapi-feed?x-aio-key=a712e135b6bd4007aa23d99ca6e8d8d3";
 
 
     @Override
@@ -247,7 +244,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }catch (JSONException e){
                             mTextViewResult.setText("Server Response Error " );;
                         }
-                        mTextViewResult.setText("Response: Post Successful" /*+response*/);;
+                        mTextViewResult.setText("Response: Successfully posted " +thisString);;
                     }
                 },
                 new Response.ErrorListener()
@@ -263,7 +260,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public Map<String,String> getHeaders() throws AuthFailureError {
                 Map<String,String> params = new HashMap<String,String>();
-                params.put("x-aio-key", theHeader);
+                params.put("X-AIO-Key", theHeader);
                 return params;
             }
 
@@ -295,7 +292,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             textView.setText("Status: Connected" /*+ ipaddress*/);
         }
     }
-    
+
 
 }
 
